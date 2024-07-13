@@ -1,8 +1,8 @@
 package com.uj.webflux.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.uj.webflux.model.ChatRequest;
-import com.uj.webflux.model.ChatResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -21,16 +22,25 @@ public class ChatController {
     @Value("${openai.model}")
     private String model;
 
+    private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     public ChatController(@Qualifier("openaiRestClient") WebClient webClient) {
         this.webClient = webClient;
     }
 
     @PostMapping("/askQuestion")
-    public Mono<ChatResponse> chat(@RequestBody JsonNode jsonNode) {
-        String message = jsonNode.get("question").asText();
-        ChatRequest request = new ChatRequest(model, message);
-        log.info("request :: {}", request);
-        return webClient.post().bodyValue(request).retrieve().bodyToMono(ChatResponse.class);
+    public Mono<JsonNode> sendAnswer(@RequestBody JsonNode jsonNode) {
+        String question = jsonNode.get("question").asText();
+        ObjectNode objectNode = OBJECT_MAPPER.createObjectNode().put("message", question).set("options",OBJECT_MAPPER.createObjectNode().put("model",model));
+        return webClient.post().bodyValue(objectNode).retrieve().bodyToMono(JsonNode.class).flatMap(data->{
+            JsonNode messages = data.get("data").get("messages");
+            for (JsonNode message : messages) {
+                if ("assistant".equals(message.get("role").asText())) {
+                    return Mono.just(message.get("content"));
+                }
+            }
+            return Mono.empty();
+        });
     }
 
 }
