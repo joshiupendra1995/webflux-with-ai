@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ask UJ</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+<form id="questionForm">
+    <label for="question"></label><textarea id="question" name="question" rows="4"
+                                            placeholder="Enter your question here..." required></textarea><br>
+    <button id="submitButton" type="button">Submit</button>
+    <button id="clearButton" type="button">Clear</button>
+    <br>
+    <label for="response"></label><textarea id="response" name="response" rows="8"
+                                            placeholder="Response will appear here..." readonly></textarea>
+    <div class="loader"></div>
+</form>
+</body>
+</html>
